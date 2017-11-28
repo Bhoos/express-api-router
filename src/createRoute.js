@@ -11,6 +11,6 @@ export default function createRoute(apiCall, argTypes) {
     const response = apiCall.apply(null, args);
 
     // Send back the response
-    return res.send(response);
+    return res.json(response);
   };
 }
