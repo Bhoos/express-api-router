@@ -8,9 +8,7 @@ export default function createRoute(apiCall, argTypes) {
 
     // Make the api call
     // eslint-disable-next-line prefer-spread
-    const response = apiCall.apply(null, args);
-
-    // Send back the response
-    return res.json(response);
+    return Promise.resolve(apiCall.apply(null, args))
+      .then(response => res.json(response));
   };
 }
