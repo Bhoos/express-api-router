@@ -99,20 +99,26 @@ describe('setupRouter', () => {
       mockApi.level0.level01.mockReturnValueOnce(response);
 
       // Perform the request, making the api call
-      handler(req, res);
+      return handler(req, res).then(() => {
+        expect(mockApi.level0.level01.mock.calls).toHaveLength(1);
+        const apiCall = mockApi.level0.level01.mock.calls[0];
+        // Should pass 4 parameters (including session)
+        expect(apiCall).toHaveLength(4);
+        expect(apiCall[0]).toBe(req.session);
+        expect(apiCall[1]).toBe(req.params.p1);
+        expect(apiCall[2]).toBe(req.query.p2);
+        expect(apiCall[3]).toBe(req.body.p3);
 
-      expect(mockApi.level0.level01.mock.calls).toHaveLength(1);
-      const apiCall = mockApi.level0.level01.mock.calls[0];
-      // Should pass 4 parameters (including session)
-      expect(apiCall).toHaveLength(4);
-      expect(apiCall[0]).toBe(req.session);
-      expect(apiCall[1]).toBe(req.params.p1);
-      expect(apiCall[2]).toBe(req.query.p2);
-      expect(apiCall[3]).toBe(req.body.p3);
-
-      // expect response to be passed
-      expect(res.json.mock.calls).toHaveLength(1);
-      expect(res.json.mock.calls[0][0]).toBe(response);
+        // expect response to be passed
+        expect(res.json.mock.calls).toHaveLength(1);
+        expect(res.json.mock.calls[0][0]).toBe(response);
+      });
     });
+  });
+
+  it('must return router passed as argument', () => {
+    const router = {};
+    const api = {};
+    expect(setupRouter(router, api, () => {})).toBe(router);
   });
 });

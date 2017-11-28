@@ -63,5 +63,7 @@ export default function setupRouter(router, api, setup) {
     form: name => createArgument(TYPE_FORM, name),
   };
 
-  return setup(r);
+  setup(r);
+
+  return router;
 }
