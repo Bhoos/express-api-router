@@ -4,7 +4,11 @@
   "description": "API route generator for express",
   "main": "__dist__/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "babel src --out-dir __dist__",
+    "clean": "rimraf __dist__",
+    "lint": "eslint src",
+    "prepublish": "npm run lint && npm run test && npm run clean && npm run build",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
