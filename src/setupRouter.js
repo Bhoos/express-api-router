@@ -22,6 +22,20 @@ export default function setupRouter(router, api, setup) {
 
       branch: path => createBranch(branch, path),
 
+      wsProxy: (proxyUrl, path, ...args) => {
+        // First figure out if there are params defined, which need to be appended
+        const params = args
+          .filter(arg => arg.type === TYPE_PARAM)
+          .reduce((acc, arg) => `${acc}/:${arg.name}`, '');
+
+        // Get the full path
+        const fullPath = `${branch.path}/${path}${params}`;
+
+        // websocket proxying is supported only through get
+        router.use(fullPath, createProxy(proxyUrl, branch.api[path], args.map(a => a.extract)));
+        return branch;
+      },
+
       route: (path, ...args) => {
         // First figure out if there are params defined, which need to be appended
         const params = args
@@ -33,7 +47,6 @@ export default function setupRouter(router, api, setup) {
         const method = usePost ? 'post' : 'get';
         // Get the full path
         const fullPath = `${branch.path}/${path}${params}`;
-        console.log(`Setting router.${method} for ${fullPath}`);
         // Setup the router
         router[method](fullPath, createRoute(branch.api[path], args.map(a => a.extract)));
 
