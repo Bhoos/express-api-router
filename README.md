@@ -45,7 +45,7 @@ const api = {
 
 setupRouter(Router(), api, (r) => {
   r.route('getRooms');
-  r.route('joinRoom', r.param('room'));
+  r.wsProxy('ws://websocket-server', 'joinRoom', r.param('room'));
   r.route('login', r.form('uid'), r.form('pwd'));
   // Also available argument provider is r.query
 });
@@ -60,6 +60,6 @@ setupRouter(Router(), api, (r) => {
     .route('login', r.form('uid'), r.form('pwd'));
   r.branch('room')
     .route('all')
-    .route('join', r.param('room'));
+    .wsProxy((res) => `ws://${res.server}:${res.port}/${res.id}`, 'join', r.param('room'));
 });
 ```
