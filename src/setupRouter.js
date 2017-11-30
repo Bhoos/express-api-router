@@ -1,4 +1,5 @@
 import createRoute from './createRoute';
+import createProxy from './createProxy';
 
 const TYPE_PARAM = 'params';
 const TYPE_QUERY = 'query';
@@ -13,55 +14,43 @@ function createArgument(type, name) {
 }
 
 export default function setupRouter(router, api, setup) {
-  class Branch {
-    constructor(parent, path) {
-      this.parent = parent;
-      this.path = path;
+  function createBranch(parent, name) {
+    const branch = {
+      api: parent === null ? api : api[name],
 
-      this.api = parent === null ? api[path] : parent.api[path];
-    }
+      path: parent === null ? '' : `${parent.path}/${name}`,
 
-    getFullPath() {
-      if (this.parent === null) {
-        return `/${this.path}`;
-      }
+      branch: path => createBranch(branch, path),
 
-      return `${this.parent.getFullPath()}/${this.path}`;
-    }
+      route: (path, ...args) => {
+        // First figure out if there are params defined, which need to be appended
+        const params = args
+          .filter(arg => arg.type === TYPE_PARAM)
+          .reduce((acc, arg) => `${acc}/:${arg.name}`, '');
 
-    branch(path) {
-      return new Branch(this, path);
-    }
+        // Check if post method is needed
+        const usePost = args.some(arg => arg.type === TYPE_FORM);
+        const method = usePost ? 'post' : 'get';
+        // Get the full path
+        const fullPath = `${branch.path}/${path}${params}`;
+        console.log(`Setting router.${method} for ${fullPath}`);
+        // Setup the router
+        router[method](fullPath, createRoute(branch.api[path], args.map(a => a.extract)));
 
-    route(path, ...args) {
-      // First figure out if there are params defined, which need to be appended
-      const params = args
-        .filter(arg => arg.type === TYPE_PARAM)
-        .reduce((acc, arg) => `${acc}/:${arg.name}`, '');
+        return branch;
+      },
 
-      // Check if post method is needed
-      const usePost = args.some(arg => arg.type === TYPE_FORM);
-      const method = usePost ? router.post : router.get;
+      param: argName => createArgument(TYPE_PARAM, argName),
 
-      // Get the full path
-      const fullPath = `${this.getFullPath()}/${path}${params}`;
+      query: argName => createArgument(TYPE_QUERY, argName),
 
-      // Setup the router
-      method(fullPath, createRoute(this.api[path], args.map(a => a.extract)));
+      form: argName => createArgument(TYPE_FORM, argName),
+    };
 
-      return this;
-    }
+    return branch;
   }
 
-  const r = {
-    branch: path => new Branch(null, path),
-
-    param: name => createArgument(TYPE_PARAM, name),
-
-    query: name => createArgument(TYPE_QUERY, name),
-
-    form: name => createArgument(TYPE_FORM, name),
-  };
+  const r = createBranch(null, '');
 
   setup(r);
 
